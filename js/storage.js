@@ -10,7 +10,7 @@ const Storage = {
     CHARACTERS.forEach((c) => {
       chars[c.id] = { sessions: 0, totalGain: 0, bestSync: 0 };
     });
-    return { totalResonance: 0, chars };
+    return { totalResonance: 0, seenIntro: false, chars };
   },
 
   load() {
@@ -21,6 +21,9 @@ const Storage = {
         const saved = JSON.parse(raw);
         if (typeof saved.totalResonance === 'number') {
           this.data.totalResonance = saved.totalResonance;
+        }
+        if (saved.seenIntro) {
+          this.data.seenIntro = true;
         }
         CHARACTERS.forEach((c) => {
           const rec = saved.chars && saved.chars[c.id];
@@ -49,6 +52,12 @@ const Storage = {
 
   record(charId) {
     return this.data.chars[charId];
+  },
+
+  // オープニング(導入)を読了/スキップした。次回以降は受付から始まる
+  markIntroSeen() {
+    this.data.seenIntro = true;
+    this.save();
   },
 
   // 精算時に呼ぶ。関係記録と所持共鳴を更新して保存

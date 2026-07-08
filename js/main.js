@@ -3,6 +3,7 @@
 // ============================================================
 
 const SCREENS = {
+  opening: { el: 'screen-opening', ctrl: OpeningScreen, bg: 'itaconion' },
   reception: { el: 'screen-reception', ctrl: ReceptionScreen, bg: 'itaconion' },
   matching: { el: 'screen-matching', ctrl: MatchingScreen, bg: 'itaconion' },
   phase1: { el: 'screen-phase1', ctrl: Phase1Screen, bg: 'cave' },
@@ -29,6 +30,12 @@ function showScreen(name) {
 
 document.addEventListener('DOMContentLoaded', () => {
   Storage.load();
+
+  // オープニング(導入): パネルのタップで進む / スキップで受付へ
+  document.getElementById('prologue')
+    .addEventListener('click', () => OpeningScreen.advance());
+  document.getElementById('btn-skip-prologue')
+    .addEventListener('click', () => OpeningScreen.finish());
 
   // 受付
   document.getElementById('btn-find-partner')
@@ -58,5 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-return')
     .addEventListener('click', () => showScreen('reception'));
 
-  showScreen('reception');
+  // 初回は導入から、既読なら受付から始める
+  showScreen(Storage.data.seenIntro ? 'reception' : 'opening');
 });

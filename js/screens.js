@@ -25,6 +25,64 @@ function makePortrait(char, extraClass) {
   return wrap;
 }
 
+// ---- オープニング(導入) --------------------------------------
+// 初見プレイヤーに「自分は何者で、ここは何なのか」を渡す。企画書の
+// トーン(異世界バイト/裏稼業バディコメディ)に合わせた手配所のオヤジ語り。
+const PROLOGUE_BEATS = [
+  'よう、新入り。人間がわざわざ異世界くんだりまで来る理由なんざ、一つしかねぇ ——“共鳴”だろ?\nここでしか採れねぇその鉱石、人間界じゃバカ高く売れるからな。',
+  'つまりアンタは、ひと山当てに来た密輸人ってわけだ。\nだが共鳴ってのは、二人の波長がピタッと合った時にしか生まれねぇ。アンタ一人じゃ、石ころ一つ掘れやしない。',
+  'そこで身体を貸すのが、ここに屯(たむろ)してるワケあり連中 —— ITACONだ。\n連中に憑依して、二人で鉱脈を掘り当てる。それがこの稼業さ。',
+  '狙いを定めるのはアンタの勘。あとは相棒と呼吸を合わせるだけ。\n掘れた共鳴は山分けだ。……さあ、どいつと組む? 相棒を探しに行きな。',
+];
+
+const OpeningScreen = {
+  beat: 0,
+
+  enter() {
+    this.beat = 0;
+    this.render();
+  },
+
+  render() {
+    const el = $('#prologue-text');
+    el.textContent = PROLOGUE_BEATS[this.beat];
+    // クラス付け直し+リフローでビート切り替えのフェードを毎回再生
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+
+    this.renderDots();
+    const last = this.beat === PROLOGUE_BEATS.length - 1;
+    $('#prologue-hint').textContent = last ? 'タップして手配所へ' : 'タップで進む';
+  },
+
+  renderDots() {
+    const box = $('#prologue-dots');
+    box.innerHTML = '';
+    PROLOGUE_BEATS.forEach((_, i) => {
+      const d = document.createElement('span');
+      if (i <= this.beat) d.classList.add('on');
+      box.appendChild(d);
+    });
+  },
+
+  // パネルのタップで次のビートへ。最後まで来たら受付へ抜ける
+  advance() {
+    if (this.beat < PROLOGUE_BEATS.length - 1) {
+      this.beat += 1;
+      this.render();
+    } else {
+      this.finish();
+    }
+  },
+
+  // スキップ/読了。次回以降は受付から始まるよう既読フラグを保存
+  finish() {
+    Storage.markIntroSeen();
+    showScreen('reception');
+  },
+};
+
 // ---- 受付 ------------------------------------------------------
 const ReceptionScreen = {
   enter() {

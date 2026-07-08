@@ -9,15 +9,28 @@
 <body>
 <div id="app">
 
+  <!-- ===== オープニング(導入・初回のみ自動表示) ===== -->
+  <section id="screen-opening" class="screen">
+    <div id="prologue" class="prologue">
+      <span class="prologue-speaker">手配所のオヤジ</span>
+      <p id="prologue-text" class="prologue-text"></p>
+      <div class="prologue-nav">
+        <div id="prologue-dots" class="prologue-dots"></div>
+        <span id="prologue-hint" class="prologue-hint">タップで進む</span>
+      </div>
+    </div>
+    <button id="btn-skip-prologue" class="btn ghost small">スキップ</button>
+  </section>
+
   <!-- ===== 受付 ===== -->
   <section id="screen-reception" class="screen">
     <h1 class="logo">
       <img class="logo-img" src="assets/itaconion_logo.png" alt="ITACONION">
-      <span class="logo-sub">— 日陰者手配所 —</span>
+      <span class="logo-sub">— 異世界の日陰者手配所 —</span>
     </h1>
     <div class="board">
       <h2 class="board-title">本日の依頼</h2>
-      <p class="quest-text">第3坑道、共鳴鉱石の採掘。<br>ただし坑道の主がうるさい。</p>
+      <p class="quest-text">第3坑道で“共鳴鉱石”を掘る。<br>狙いを定めて、相棒と呼吸を合わせろ。</p>
       <p class="quest-note">報酬:出来高(相棒と山分け)</p>
     </div>
     <div class="wallet">

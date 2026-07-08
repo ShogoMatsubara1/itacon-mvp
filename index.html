@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ITACON MVP</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== 受付 ===== -->
+  <section id="screen-reception" class="screen">
+    <h1 class="logo">
+      <img class="logo-img" src="assets/itaconion_logo.png" alt="ITACONION">
+      <span class="logo-sub">— 日陰者手配所 —</span>
+    </h1>
+    <div class="board">
+      <h2 class="board-title">本日の依頼</h2>
+      <p class="quest-text">第3坑道、共鳴鉱石の採掘。<br>ただし坑道の主がうるさい。</p>
+      <p class="quest-note">報酬:出来高(相棒と山分け)</p>
+    </div>
+    <div class="wallet">
+      <span class="wallet-label">所持共鳴</span>
+      <strong id="total-resonance">0</strong>
+    </div>
+    <button id="btn-find-partner" class="btn primary">相棒を探す</button>
+  </section>
+
+  <!-- ===== マッチング ===== -->
+  <section id="screen-matching" class="screen">
+    <h2 class="screen-title">相棒を探す</h2>
+    <p class="screen-caption">右スワイプで依頼、左スワイプでパス。向こうがOKしたらマッチ成立。</p>
+    <div id="card-stack"></div>
+    <div class="swipe-actions">
+      <button id="btn-pass" class="btn-round pass" aria-label="パス">✕</button>
+      <button id="btn-like" class="btn-round like" aria-label="依頼する">依頼</button>
+    </div>
+    <button id="btn-back-reception" class="btn ghost small">受付に戻る</button>
+
+    <div id="judge-overlay" class="overlay hidden">
+      <div class="overlay-panel">
+        <h3 id="judge-title" class="judge-title hidden"></h3>
+        <div id="judge-portrait"></div>
+        <p id="judge-text" class="judge-text"></p>
+        <button id="btn-judge-action" class="btn primary hidden"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 採掘 フェーズ1(判断) ===== -->
+  <section id="screen-phase1" class="screen">
+    <h2 class="screen-title">採掘 — どこを掘る?</h2>
+    <div id="phase1-partner" class="partner-row"></div>
+    <div id="dig-map" class="dig-map"></div>
+    <button id="btn-dig" class="btn primary" disabled>ここを掘る</button>
+  </section>
+
+  <!-- ===== 採掘 フェーズ2(呼吸合わせ) ===== -->
+  <section id="screen-phase2" class="screen">
+    <h2 class="screen-title">呼吸を合わせろ</h2>
+    <div id="phase2-partner" class="partner-row small"></div>
+    <div class="gauge-wrap">
+      <div id="gauge">
+        <div id="zone"></div>
+        <div id="marker"><img src="assets/pickaxe.png" alt=""></div>
+      </div>
+    </div>
+    <div id="tap-dots" class="tap-dots"></div>
+    <p id="tap-feedback" class="tap-feedback">&nbsp;</p>
+    <button id="btn-tap" class="btn tap">合わせる!</button>
+  </section>
+
+  <!-- ===== 精算 ===== -->
+  <section id="screen-result" class="screen">
+    <h2 class="screen-title">精算</h2>
+    <div id="result-body"></div>
+    <button id="btn-return" class="btn primary">受付に戻る</button>
+  </section>
+
+  <!-- ===== 憑依トランジション演出(タップでスキップ) ===== -->
+  <div id="possession-overlay" class="possession hidden">
+    <div class="possession-stage">
+      <div id="possession-portrait"></div>
+      <div class="soul-orb"></div>
+    </div>
+    <div class="eyelid top"></div>
+    <div class="eyelid bottom"></div>
+    <div class="possession-flash"></div>
+    <p class="possession-text"></p>
+  </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/characters.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/game.js"></script>
+<script src="js/screens.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

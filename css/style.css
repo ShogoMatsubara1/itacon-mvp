@@ -1,0 +1,1016 @@
+/* ============================================================
+   ITACON MVP — 手描きステッカー風UI(クリーム×ネイビー×赤)
+   モバイルファースト(縦画面・タップ操作前提)
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+:root {
+  --paper: #f6f0e2;        /* 紙・クリーム(明) */
+  --cream: #f8ecc6;        /* パネルのクリーム */
+  --cream-deep: #efdfae;
+  --navy: #33509f;         /* メインのネイビー */
+  --navy-edge: #24396f;    /* 縁取り・影の濃ネイビー */
+  --ink: #2c3157;          /* クリーム上の文字色 */
+  --ink-soft: #8a774a;     /* クリーム上の補助文字 */
+  --red: #ea5044;
+  --red-edge: #b53a31;
+  --purple: #b9a8d8;
+  --purple-edge: #8a7ab8;
+  --teal: #59e3c8;
+  --teal-edge: #2fbfa4;
+  --sun: #ffd34d;          /* 黄色マーカー */
+  --sticker-shadow: 0 8px 18px rgba(15, 15, 35, 0.28);
+}
+
+body {
+  font-family: "Hiragino Maru Gothic ProN", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic", "Meiryo", sans-serif;
+  background: #1c1830;
+  color: var(--ink);
+  min-height: 100vh;
+  touch-action: manipulation; /* ダブルタップズームによる遅延を防ぐ */
+}
+
+#app {
+  position: relative; /* オーバーレイの配置基準 */
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 16px 16px 32px;
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: local;
+}
+
+/* ---- 画面ごとの背景(UIがオペークなので薄めのスクリムでOK) ---- */
+#app[data-bg="itaconion"] {
+  background-image:
+    linear-gradient(to bottom,
+      rgba(24, 20, 38, 0.14) 0%,
+      rgba(24, 20, 38, 0.20) 40%,
+      rgba(24, 20, 38, 0.42) 100%),
+    url("../assets/itaconion.png");
+}
+#app[data-bg="cave"] {
+  background-image:
+    linear-gradient(to bottom,
+      rgba(18, 15, 34, 0.22) 0%,
+      rgba(18, 15, 34, 0.38) 55%,
+      rgba(18, 15, 34, 0.52) 100%),
+    url("../assets/cave.png");
+}
+
+/* ---- 画面切り替え ---- */
+.screen {
+  display: none;
+}
+.screen.active {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadein 0.25s ease;
+}
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---- 共通パーツ ---- */
+
+/* 見出しはクリームのステッカーピル */
+.screen-title {
+  width: fit-content;
+  margin: 8px auto 0;
+  padding: 8px 24px;
+  font-size: 1.15rem;
+  text-align: center;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--navy-edge);
+  border-radius: 999px;
+  box-shadow: 0 4px 0 var(--navy-edge), var(--sticker-shadow);
+}
+
+/* 背景の明るさが場所により変わるため、影ではなくクリームの
+   ステッカーチップに乗せてコントラストを常に確保する */
+.screen-caption {
+  width: fit-content;
+  max-width: 90%;
+  margin: 0 auto;
+  padding: 8px 18px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--ink);
+  text-align: center;
+  background: var(--cream);
+  border: 2px solid var(--navy-edge);
+  border-radius: 16px;
+  box-shadow: 0 3px 0 var(--navy-edge), var(--sticker-shadow);
+}
+
+/* ステッカー風ピルボタン */
+.btn {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  border: 2px solid var(--navy-edge);
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: bold;
+  font-family: inherit;
+  color: #fdf6de;
+  background: var(--navy);
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--navy-edge), var(--sticker-shadow);
+  transition: transform 0.06s ease, box-shadow 0.06s ease, opacity 0.15s ease;
+}
+.btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--navy-edge), 0 4px 10px rgba(15, 15, 35, 0.25);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn.primary {
+  background: var(--navy);
+}
+.btn.ghost {
+  background: var(--purple);
+  border-color: var(--purple-edge);
+  color: #3a3168;
+  box-shadow: 0 4px 0 var(--purple-edge), var(--sticker-shadow);
+}
+.btn.ghost:active {
+  box-shadow: 0 1px 0 var(--purple-edge), 0 4px 10px rgba(15, 15, 35, 0.25);
+}
+
+/* ---- 立ち絵スロット(画像があれば差し替わる) ---- */
+.portrait {
+  position: relative;
+  background: var(--char-color, #888);
+  border: 3px solid var(--navy-edge);
+  border-radius: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 0 var(--navy-edge);
+}
+.portrait img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0; /* ホログラム疑似要素をz-indexで確実に手前へ重ねるため明示 */
+}
+.portrait-ph {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* ホログラム表示: 憑依中(採掘フェーズ1/2・精算)の立ち絵に適用。
+   本人ではなく「借りている身体」であることを見た目で示す */
+.portrait.hologram {
+  border-color: var(--teal-edge);
+  box-shadow: 0 3px 0 var(--teal-edge), 0 0 22px rgba(89, 227, 200, 0.55);
+  animation: hologramFlicker 3.4s ease-in-out infinite;
+}
+.portrait.hologram img {
+  filter: grayscale(1) contrast(1.15) brightness(1.05);
+}
+/* 単色(シアン〜ネイビー)の着色。mix-blend-mode:colorは backdrop(img)の
+   明暗はそのまま保ちつつ色相・彩度だけ塗り替えるため、写真の階調を
+   壊さずに「単色グレーディングされた映像」に見える。
+   z-indexでimgより確実に手前に乗せる(DOM順だと::beforeは背面になるため) */
+.portrait.hologram::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(160deg, #59e3c8, #33509f);
+  mix-blend-mode: color;
+  pointer-events: none;
+}
+/* 走査線(こちらは明暗の縞なのでscreenで薄く重ねる) */
+.portrait.hologram::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.5) 0px,
+    rgba(255, 255, 255, 0.5) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+  mix-blend-mode: screen;
+  opacity: 0.3;
+  pointer-events: none;
+  animation: hologramScan 3.6s linear infinite;
+}
+@keyframes hologramFlicker {
+  0%, 91%, 100% { opacity: 1; }
+  92% { opacity: 0.72; }
+  93% { opacity: 1; }
+  95.5% { opacity: 0.82; }
+  96.5% { opacity: 1; }
+}
+@keyframes hologramScan {
+  from { background-position: 0 0; }
+  to   { background-position: 0 40px; }
+}
+
+/* ============================================================
+   受付
+   ============================================================ */
+.logo {
+  text-align: center;
+  margin-top: 28px;
+  padding: 8px 0 4px;
+}
+.logo-img {
+  display: block;
+  width: 86%;
+  max-width: 400px;
+  margin: 0 auto;
+  /* 明るい壁の上でも粘土ロゴが浮くよう、影は柔らかめに */
+  filter: drop-shadow(0 5px 10px rgba(30, 40, 75, 0.35));
+}
+.logo-sub {
+  display: block;
+  width: fit-content;
+  margin: 8px auto 0;
+  padding: 3px 16px;
+  font-size: 0.75rem;
+  font-weight: normal;
+  letter-spacing: 0.25em;
+  color: var(--ink);
+  background: var(--cream);
+  border: 2px solid var(--navy-edge);
+  border-radius: 999px;
+  box-shadow: 0 3px 0 var(--navy-edge), var(--sticker-shadow);
+}
+
+#screen-reception.active {
+  justify-content: flex-start;
+}
+
+.board {
+  background: var(--cream);
+  border: 3px solid var(--navy-edge);
+  border-radius: 22px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 5px 0 var(--navy-edge), var(--sticker-shadow);
+}
+.board-title {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.2em;
+  margin-bottom: 12px;
+}
+.quest-text {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--ink);
+}
+.quest-note {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.wallet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--navy);
+  border: 2px solid var(--navy-edge);
+  border-radius: 999px;
+  padding: 12px 22px;
+  box-shadow: 0 4px 0 var(--navy-edge), var(--sticker-shadow);
+}
+.wallet-label {
+  font-size: 0.85rem;
+  color: #dfe6ff;
+}
+.wallet strong {
+  font-size: 1.5rem;
+  color: var(--sun);
+  text-shadow: 0 2px 0 rgba(20, 20, 45, 0.4);
+}
+
+/* ============================================================
+   マッチング(スワイプカード)
+   ============================================================ */
+#card-stack {
+  position: relative;
+  height: 440px;
+  margin-top: 4px;
+}
+
+.swipe-card {
+  position: absolute;
+  inset: 0;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 330px;
+  background: var(--cream);
+  border: 3px solid var(--navy-edge);
+  border-top: 8px solid var(--char-color);
+  border-radius: 24px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 5px 0 var(--navy-edge), var(--sticker-shadow);
+  touch-action: pan-y;      /* 横ドラッグを奪い、縦スクロールは残す */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.swipe-card .portrait img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+.swipe-card.back {
+  transform: scale(0.94) translateY(12px);
+  opacity: 0.8;
+}
+.swipe-card.settle {
+  transition: transform 0.22s ease;
+}
+.swipe-card.fly-left {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform: translateX(-130%) rotate(-16deg) !important;
+  opacity: 0;
+}
+.swipe-card.fly-right {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform: translateX(130%) rotate(16deg) !important;
+  opacity: 0;
+}
+.swipe-card.re-enter {
+  animation: reenter 0.3s ease;
+}
+@keyframes reenter {
+  from { transform: translateX(45%) rotate(8deg); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.swipe-portrait {
+  width: 100%;
+  height: 250px;
+  border-radius: 18px;
+}
+.swipe-name {
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+.swipe-name small {
+  font-size: 0.72rem;
+  font-weight: normal;
+  color: var(--ink-soft);
+  margin-left: 6px;
+}
+.swipe-line {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #4a4468;
+  text-align: center;
+}
+.swipe-record {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+/* ドラッグ中に浮かぶスタンプ */
+.stamp {
+  position: absolute;
+  top: 18px;
+  padding: 4px 14px;
+  border: 4px solid;
+  border-radius: 10px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  opacity: 0;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.65);
+}
+.stamp.like {
+  left: 14px;
+  color: var(--teal-edge);
+  border-color: var(--teal-edge);
+  transform: rotate(-14deg);
+}
+.stamp.pass {
+  right: 14px;
+  color: var(--red);
+  border-color: var(--red);
+  transform: rotate(14deg);
+}
+
+/* ✕/依頼 の丸ボタン */
+.swipe-actions {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+}
+.btn-round {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+.btn-round:active {
+  transform: translateY(3px);
+}
+.btn-round.pass {
+  background: var(--cream);
+  color: var(--red);
+  border: 3px solid var(--red-edge);
+  font-size: 1.7rem;
+  box-shadow: 0 4px 0 var(--red-edge), var(--sticker-shadow);
+}
+.btn-round.pass:active {
+  box-shadow: 0 1px 0 var(--red-edge), 0 4px 10px rgba(15, 15, 35, 0.25);
+}
+.btn-round.like {
+  background: var(--teal);
+  color: #14453b;
+  border: 3px solid var(--teal-edge);
+  font-size: 1.05rem;
+  box-shadow: 0 4px 0 var(--teal-edge), var(--sticker-shadow);
+}
+.btn-round.like:active {
+  box-shadow: 0 1px 0 var(--teal-edge), 0 4px 10px rgba(15, 15, 35, 0.25);
+}
+
+.btn.small {
+  min-height: 44px;
+  max-width: 240px;
+  margin: 0 auto;
+  font-size: 0.9rem;
+}
+
+.judge-title {
+  font-size: 1.35rem;
+  color: #1e7a63;
+  letter-spacing: 0.08em;
+}
+
+/* ---- 審査オーバーレイ ----
+   position:fixed はビューポート拡大縮小環境(アプリ内プレビュー等)で
+   ずれるため、#app基準のabsolute+上寄せで安定させる */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 13, 30, 0.6);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+  z-index: 10;
+}
+.overlay .overlay-panel {
+  margin-top: min(12vh, 140px);
+}
+.overlay-panel {
+  width: 100%;
+  max-width: 400px;
+  background: #e9f0e2;
+  border: 3px solid var(--navy-edge);
+  border-radius: 22px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 6px 0 var(--navy-edge), 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+.judge-portrait-img {
+  width: 110px;
+  height: 140px;
+}
+.judge-text {
+  text-align: center;
+  line-height: 1.7;
+  min-height: 3.4em;
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+}
+.judge-text.judging {
+  color: #7d8aa8;
+  animation: blink 1s ease infinite;
+}
+@keyframes blink {
+  50% { opacity: 0.4; }
+}
+#btn-judge-action {
+  max-width: 280px;
+}
+
+/* ============================================================
+   採掘 フェーズ1(判断)
+   ============================================================ */
+.partner-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.partner-portrait {
+  width: 84px;
+  height: 112px;
+}
+.partner-portrait.small {
+  width: 60px;
+  height: 80px;
+}
+
+/* 吹き出し: クリーム+ネイビー縁+しっぽ(縁付き二重三角) */
+.bubble {
+  flex: 1;
+  background: var(--cream);
+  border: 3px solid var(--navy-edge);
+  border-radius: 18px;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  position: relative;
+  color: var(--ink);
+  box-shadow: 0 4px 0 var(--navy-edge), var(--sticker-shadow);
+}
+.bubble::before {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: 20px;
+  border: 10px solid transparent;
+  border-right-color: var(--navy-edge);
+  border-left-width: 0;
+}
+.bubble::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 23px;
+  border: 7px solid transparent;
+  border-right-color: var(--cream);
+  border-left-width: 0;
+}
+.bubble-name {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+
+/* 採掘地点の地図: 洞窟の「開けた地面」だけを切り出して表示する
+   (結晶が生えている一角は地点ごとに見た目が変わってしまい、
+   §3-3の「候補地点はほぼ均質に見せる」に反するため避ける) */
+.dig-map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 22px;
+  border: 3px solid var(--navy-edge);
+  overflow: hidden;
+  box-shadow: 0 5px 0 var(--navy-edge), var(--sticker-shadow);
+  background-image: url("../assets/cave.png");
+  background-size: 240% auto;
+  background-position: 50% 84%;
+  background-repeat: no-repeat;
+}
+.dig-map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(10, 8, 20, 0.1), rgba(10, 8, 20, 0.32));
+  pointer-events: none;
+}
+
+/* マーカー(地図ピン)。座標の基準点は先端(下端の尖り)にくるよう
+   translate(-50%, -100%) を土台にする */
+.pin-anchor {
+  all: unset;
+  position: absolute;
+  cursor: pointer;
+  transform: translate(-50%, -100%);
+  -webkit-tap-highlight-color: transparent;
+}
+.pin-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 26px;
+  height: 9px;
+  background: rgba(8, 6, 16, 0.45);
+  border-radius: 50%;
+  filter: blur(1px);
+  transform: translateX(-50%);
+}
+.pin-shape {
+  position: relative;
+  display: block;
+  width: 46px;
+  height: 46px;
+  background: var(--cream);
+  border: 3px solid var(--navy-edge);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 3px 0 var(--navy-edge), 0 6px 10px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.pin-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg) translateY(-3px);
+  font-weight: bold;
+  font-size: 1.15rem;
+  color: var(--ink);
+  pointer-events: none;
+}
+.pin-anchor:active .pin-shape {
+  transform: rotate(-45deg) scale(0.9);
+}
+.pin-anchor.selected .pin-shape {
+  background: #ffe9a6;
+  border-color: #d9931f;
+  box-shadow: 0 3px 0 #d9931f, 0 0 16px rgba(255, 211, 77, 0.7);
+}
+.pin-anchor.selected {
+  animation: pinBounce 0.4s ease;
+}
+@keyframes pinBounce {
+  0%   { transform: translate(-50%, -100%) scale(1); }
+  40%  { transform: translate(-50%, -120%) scale(1.08); }
+  100% { transform: translate(-50%, -100%) scale(1); }
+}
+
+/* 登場時: 上からポンと落ちてくる(順番にわずかずつ遅延) */
+.pin-anchor.drop {
+  animation: pinDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes pinDrop {
+  0%   { transform: translate(-50%, -280%); opacity: 0; }
+  70%  { transform: translate(-50%, -86%); opacity: 1; }
+  100% { transform: translate(-50%, -100%); opacity: 1; }
+}
+
+/* ============================================================
+   採掘 フェーズ2(呼吸合わせ)
+   ============================================================ */
+.gauge-wrap {
+  padding: 12px 4px;
+}
+#gauge {
+  position: relative;
+  height: 52px;
+  background: var(--navy);
+  border: 3px solid var(--navy-edge);
+  border-radius: 999px;
+  /* マーカーをつるはしアイコンに変えたため、両端付近でアイコンが
+     欠けないよう見た目のクリップはやめる(ゾーンは中央寄りなので影響なし) */
+  overflow: visible;
+  box-shadow: 0 4px 0 var(--navy-edge), var(--sticker-shadow);
+}
+#zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 6px;
+  background: var(--teal);
+  border-left: 3px solid var(--teal-edge);
+  border-right: 3px solid var(--teal-edge);
+  opacity: 0.92;
+}
+/* インジケーター = つるはしアイコン。位置(left%)はJSが更新するのは
+   従来どおりで、見た目だけ差し替えている。
+   中央寄せをmargin(transformではなく)で行っているのは、タップ時の
+   傾きアニメーションでtransform:rotate()を自由に使うため */
+#marker {
+  position: absolute;
+  top: 50%;
+  width: 100px;
+  height: 100px;
+  margin-left: -50px;
+  margin-top: -54px;
+  /* 回転の支点を中心ではなく持ち手(グリップ)付近に置く。
+     画像は左下が持ち手・右上が刃先の対角構図のため、その位置に寄せる */
+  transform-origin: 34% 72%;
+  pointer-events: none;
+}
+#marker img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+}
+/* タップ瞬間: クリックした刹那に最大まで傾いて発光し、そこから
+   すっと戻す(0%を「盛り上げ」ではなく「衝突の瞬間」にすることで、
+   クリックと見た目のタイミングを一致させる)。
+   ease-outで序盤〜中盤は傾きを保持し、終盤にすっと戻す */
+#marker.swing {
+  animation: pickaxeSwing 0.32s ease-out;
+}
+@keyframes pickaxeSwing {
+  /* 支点(持ち手)から見て刃先は右上にあるため、正の角度(時計回り)で
+     刃先が下向きに振り下ろされる。負の角度だと逆に跳ね上がって見える */
+  0% {
+    transform: rotate(34deg);
+    filter: brightness(2.2) drop-shadow(0 0 16px rgba(255, 225, 130, 1));
+  }
+  40% {
+    transform: rotate(28deg);
+    filter: brightness(1.7) drop-shadow(0 0 12px rgba(255, 225, 130, 0.8));
+  }
+  100% {
+    transform: rotate(0deg);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(255, 225, 130, 0));
+  }
+}
+
+.tap-dots {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.tap-dot {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid var(--navy-edge);
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  box-shadow: 0 3px 0 var(--navy-edge);
+}
+.tap-dot.done {
+  background: var(--teal);
+  border-color: var(--teal-edge);
+  color: #14453b;
+  font-weight: bold;
+  box-shadow: 0 3px 0 var(--teal-edge);
+}
+
+.tap-feedback {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: bold;
+  min-height: 1.5em;
+  color: #ffe9a6;
+  text-shadow: 0 2px 0 rgba(20, 20, 45, 0.8), 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+.tap-feedback.pop {
+  animation: pop 0.3s ease;
+}
+@keyframes pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.btn.tap {
+  min-height: 88px;
+  font-size: 1.4rem;
+  border-radius: 999px;
+  background: var(--red);
+  border-color: var(--red-edge);
+  box-shadow: 0 5px 0 var(--red-edge), var(--sticker-shadow);
+}
+.btn.tap:active {
+  box-shadow: 0 1px 0 var(--red-edge), 0 4px 10px rgba(15, 15, 35, 0.25);
+}
+
+/* ============================================================
+   精算
+   ============================================================ */
+#result-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.result-spot {
+  width: fit-content;
+  margin: 0 auto;
+  padding: 6px 20px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 999px;
+  border: 3px solid var(--navy-edge);
+  box-shadow: 0 3px 0 var(--navy-edge), var(--sticker-shadow);
+}
+.result-spot.hit {
+  background: var(--teal);
+  border-color: var(--teal-edge);
+  color: #14453b;
+  box-shadow: 0 3px 0 var(--teal-edge), var(--sticker-shadow);
+}
+.result-spot.miss {
+  background: var(--red);
+  border-color: var(--red-edge);
+  color: #fdf6de;
+  box-shadow: 0 3px 0 var(--red-edge), var(--sticker-shadow);
+}
+.result-gain {
+  text-align: center;
+  background: var(--cream);
+  border: 3px solid var(--navy-edge);
+  border-radius: 22px;
+  padding: 20px;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  box-shadow: 0 5px 0 var(--navy-edge), var(--sticker-shadow);
+}
+.result-gain strong {
+  display: block;
+  font-size: 2.4rem;
+  color: #d9822b;
+  margin-top: 4px;
+  text-shadow: 0 2px 0 rgba(120, 70, 10, 0.15);
+}
+.result-sync {
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: bold;
+  color: #fdf6de;
+  text-shadow: 0 2px 0 rgba(20, 20, 45, 0.8), 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+.result-wallet {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #f1e4bd;
+  text-shadow: 0 1px 4px rgba(10, 10, 30, 0.9);
+}
+
+/* ============================================================
+   憑依トランジション演出
+   (魂が飛び込む → 白フラッシュ → まぶたが開いて一人称へ)
+   ============================================================ */
+.possession {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+  background: rgba(12, 9, 22, 0.94);
+  animation: possessionFadeIn 0.2s ease;
+  cursor: pointer; /* タップでスキップ */
+}
+@keyframes possessionFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+/* まぶたフェーズでは背景を透過し、後ろのフェーズ1画面を見せる */
+.possession.eyes {
+  background: transparent;
+  animation: none;
+}
+
+.possession-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: min(22vh, 190px);
+}
+.possession-portrait-img {
+  width: 150px;
+  height: 190px;
+}
+/* 魂の着弾: 発光+ブルッと震える */
+.possession .portrait.hit {
+  animation: possessHit 0.5s ease;
+}
+@keyframes possessHit {
+  0%   { transform: none; filter: brightness(1); }
+  12%  { transform: translate(-4px, 2px) rotate(-2.5deg); filter: brightness(2.6); }
+  28%  { transform: translate(4px, -2px) rotate(2.5deg); filter: brightness(1.9); }
+  46%  { transform: translate(-3px, 1px) rotate(-1.5deg); filter: brightness(1.5); }
+  64%  { transform: translate(2px, -1px) rotate(1deg); filter: brightness(1.25); }
+  100% { transform: none; filter: brightness(1); }
+}
+
+/* プレイヤーの魂(光の玉)。飛翔はJS(WAAPI)で距離を計算して動かす */
+.soul-orb {
+  width: 26px;
+  height: 26px;
+  margin-top: 210px;
+  border-radius: 50%;
+  background: #fff8e0;
+  box-shadow:
+    0 0 14px 6px rgba(255, 233, 166, 0.95),
+    0 0 40px 18px rgba(255, 211, 77, 0.5);
+  animation: soulPulse 0.9s ease-in-out infinite;
+}
+@keyframes soulPulse {
+  50% { box-shadow:
+    0 0 18px 9px rgba(255, 233, 166, 1),
+    0 0 52px 24px rgba(255, 211, 77, 0.65); }
+}
+
+/* 白フラッシュ */
+.possession-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+/* まぶた(上下から開く) */
+.eyelid {
+  position: absolute;
+  left: -6%;
+  width: 112%;
+  height: 62%; /* 曲線のへこみ分を重ねて、閉眼時に隙間を作らない */
+  background: #0d0a1a;
+  z-index: 2;
+}
+.eyelid.top {
+  top: 0;
+  border-radius: 0 0 50% 50% / 0 0 26% 26%;
+  transform: translateY(-103%);
+}
+.eyelid.bottom {
+  bottom: 0;
+  border-radius: 50% 50% 0 0 / 26% 26% 0 0;
+  transform: translateY(103%);
+}
+.eyelid.closed {
+  transform: translateY(0);
+}
+/* .open は .closed より後に定義して勝たせる(遷移付き) */
+.eyelid.top.open {
+  transform: translateY(-103%);
+  transition: transform 0.65s cubic-bezier(0.65, 0.05, 0.45, 1);
+}
+.eyelid.bottom.open {
+  transform: translateY(103%);
+  transition: transform 0.65s cubic-bezier(0.65, 0.05, 0.45, 1);
+}
+
+.possession-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: min(58vh, 500px);
+  z-index: 5;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 0.25em;
+  color: #ffe9a6;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+/* 目覚め直後: 視界のピントが合う(借りた身体に慣れていない感) */
+#app.waking .screen.active {
+  animation: focusIn 0.85s ease both;
+}
+@keyframes focusIn {
+  0%   { filter: blur(7px); transform: scale(1.03) rotate(0.5deg); }
+  55%  { filter: blur(2px); transform: scale(1.005) rotate(-0.25deg); }
+  100% { filter: blur(0); transform: none; }
+}
+
+/* ---- 横幅が広い画面でも中央カラム維持(スマホ縦が基準) ---- */
+@media (min-width: 700px) {
+  #app {
+    padding-top: 32px;
+  }
+}

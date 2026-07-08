@@ -4,6 +4,21 @@
 
 const $ = (sel) => document.querySelector(sel);
 
+// 数値は常に3桁区切りで表示する
+const fmt = (n) => n.toLocaleString('ja-JP');
+
+// 数値のカウントアップ演出(獲得量など「増えた実感」を出す場面用)
+function animateCount(el, target, { prefix = '', duration = 750 } = {}) {
+  const t0 = performance.now();
+  const step = (t) => {
+    const p = Math.min((t - t0) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+    el.textContent = prefix + fmt(Math.round(target * eased));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 // ---- 共通: 立ち絵スロット --------------------------------------
 // 画像(assets/*.png)があれば表示、なければ色付きプレースホルダー
 function makePortrait(char, extraClass) {
@@ -29,10 +44,10 @@ function makePortrait(char, extraClass) {
 // 初見プレイヤーに「自分は何者で、ここは何なのか」を渡す。企画書の
 // トーン(異世界バイト/裏稼業バディコメディ)に合わせた手配所のオヤジ語り。
 const PROLOGUE_BEATS = [
-  'よう、新入り。人間がわざわざ異世界くんだりまで来る理由なんざ、一つしかねぇ ——“共鳴”だろ?\nここでしか採れねぇその鉱石、人間界じゃバカ高く売れるからな。',
-  'つまりアンタは、ひと山当てに来た密輸人ってわけだ。\nだが共鳴ってのは、二人の波長がピタッと合った時にしか生まれねぇ。アンタ一人じゃ、石ころ一つ掘れやしない。',
-  'そこで身体を貸すのが、ここに屯(たむろ)してるワケあり連中 —— ITACONだ。\n連中に憑依して、二人で鉱脈を掘り当てる。それがこの稼業さ。',
-  '狙いを定めるのはアンタの勘。あとは相棒と呼吸を合わせるだけ。\n掘れた共鳴は山分けだ。……さあ、どいつと組む? 相棒を探しに行きな。',
+  'いらっしゃい。あんた、稼ぎに来た人間だろ?\nこの世界の鉱石が、あんたらの世界で高く売れるって話はもう聞いてるね?',
+  'お目当ての石の名前は“共鳴石(きょうめいせき)”。\nふたりの息がぴったり合った瞬間にしか採れない、変わった鉱石だ。',
+  'そこで、ここにいるワケあり連中 —— ITACON(イタコン)の出番さ。\n気に入ったやつの身体を借りて、ふたりで掘るんだ。',
+  'どこを掘るかは、あんたの勘で決めな。あとは相棒と呼吸を合わせるだけ。\n採れた石は山分け。……さあ、相棒を選んでいきな。',
 ];
 
 const OpeningScreen = {
@@ -86,7 +101,8 @@ const OpeningScreen = {
 // ---- 受付 ------------------------------------------------------
 const ReceptionScreen = {
   enter() {
-    $('#total-resonance').textContent = Storage.data.totalResonance;
+    $('#total-resonance').innerHTML =
+      `<span class="gem"></span>${fmt(Storage.data.totalResonance)}`;
   },
 };
 
@@ -145,7 +161,7 @@ const MatchingScreen = {
     record.className = 'swipe-record';
     record.textContent =
       rec.sessions > 0
-        ? `${rec.sessions}セッション / 最高シンクロ${rec.bestSync}% / 累計${rec.totalGain}共鳴`
+        ? `いっしょに採掘${rec.sessions}回 / ベストシンクロ${rec.bestSync}% / 稼ぎ${fmt(rec.totalGain)}`
         : 'まだ組んだことがない';
     card.appendChild(record);
 
@@ -386,6 +402,8 @@ const Phase2Screen = {
     this.pos = 0;
     this.dir = 1;
     this.lastTime = null;
+    this.inZone = false;
+    zone.classList.remove('hot');
     this.running = true;
     this.rafId = requestAnimationFrame((t) => this.loop(t));
   },
@@ -412,6 +430,14 @@ const Phase2Screen = {
     }
     this.lastTime = time;
     $('#marker').style.left = this.pos * 100 + '%';
+
+    // ゾーン内に入った瞬間だけ帯を光らせる(タイミングの手応え)
+    const inZone = Math.abs(this.pos - 0.5) <= CONFIG.ZONE_WIDTH / 2;
+    if (inZone !== this.inZone) {
+      this.inZone = inZone;
+      $('#zone').classList.toggle('hot', inZone);
+    }
+
     this.rafId = requestAnimationFrame((t) => this.loop(t));
   },
 
@@ -489,22 +515,41 @@ const ResultScreen = {
     const spotLine = document.createElement('p');
     spotLine.className = 'result-spot ' + (result.hit ? 'hit' : 'miss');
     spotLine.textContent = result.hit
-      ? `${result.chosenSpot}地点 —— 的中!`
-      : `${result.chosenSpot}地点 —— ハズレ…(正解は${result.correctSpot}地点)`;
+      ? `${result.chosenSpot}地点 —— 当たり!`
+      : `${result.chosenSpot}地点はハズレ…(正解は${result.correctSpot}地点)`;
     body.appendChild(spotLine);
 
+    // シンクロ率からランクを算出(見た目の評価。計算には影響しない)
+    const rank =
+      result.sync >= 90 ? 'S' :
+      result.sync >= 80 ? 'A' :
+      result.sync >= 60 ? 'B' : 'C';
+
+    // 獲得量: カウントアップ
     const gain = document.createElement('div');
     gain.className = 'result-gain';
-    gain.innerHTML = `獲得共鳴 <strong>+${result.gain}</strong>`;
+    gain.innerHTML =
+      `採れた共鳴石 <strong><span class="gem big"></span><span id="gain-count">+0</span></strong>`;
     body.appendChild(gain);
+    animateCount($('#gain-count'), result.gain, { prefix: '+' });
 
-    const sync = document.createElement('p');
-    sync.className = 'result-sync';
-    sync.textContent = `シンクロ率 ${result.sync}%`;
-    if (isNewBest && result.sync > 0) {
-      sync.textContent += ' ☆自己ベスト!';
-    }
+    // シンクロ率: アニメーションするバー+ランクスタンプ
+    // (ランクは呼吸合わせの評価なのでこちらに載せる。地点のハズレとは独立)
+    const sync = document.createElement('div');
+    sync.className = 'sync-wrap';
+    sync.innerHTML =
+      `<div class="sync-head"><span>シンクロ率${
+        isNewBest && result.sync > 0 ? ' <em class="sync-best">☆自己ベスト!</em>' : ''
+      }</span><strong>${result.sync}%</strong></div>` +
+      '<div class="sync-bar"><i></i></div>' +
+      `<span class="rank-stamp rank-${rank.toLowerCase()}">${rank}</span>`;
     body.appendChild(sync);
+    // 挿入後の次フレームで幅を入れ、CSSトランジションで伸ばす
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        sync.querySelector('.sync-bar i').style.width = result.sync + '%';
+      })
+    );
 
     const partnerRow = document.createElement('div');
     partnerRow.className = 'partner-row';
@@ -517,7 +562,8 @@ const ResultScreen = {
 
     const wallet = document.createElement('p');
     wallet.className = 'result-wallet';
-    wallet.textContent = `所持共鳴: ${Storage.data.totalResonance}`;
+    wallet.innerHTML =
+      `手持ちの共鳴石 <span class="gem"></span><strong>${fmt(Storage.data.totalResonance)}</strong>`;
     body.appendChild(wallet);
   },
 };

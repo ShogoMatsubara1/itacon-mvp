@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 受付
   document.getElementById('btn-find-partner')
     .addEventListener('click', () => showScreen('matching'));
+  document.getElementById('btn-replay-intro')
+    .addEventListener('click', () => showScreen('opening'));
 
   // マッチング
   document.getElementById('btn-back-reception')

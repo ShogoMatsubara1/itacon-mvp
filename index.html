@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ITACON MVP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -30,14 +33,15 @@
     </h1>
     <div class="board">
       <h2 class="board-title">本日の依頼</h2>
-      <p class="quest-text">第3坑道で“共鳴鉱石”を掘る。<br>狙いを定めて、相棒と呼吸を合わせろ。</p>
+      <p class="quest-text">第3坑道に共鳴石の鉱脈が眠ってる。<br>相棒と息を合わせて、掘り当てろ。</p>
       <p class="quest-note">報酬:出来高(相棒と山分け)</p>
     </div>
     <div class="wallet">
-      <span class="wallet-label">所持共鳴</span>
+      <span class="wallet-label">手持ちの共鳴石</span>
       <strong id="total-resonance">0</strong>
     </div>
     <button id="btn-find-partner" class="btn primary">相棒を探す</button>
+    <button id="btn-replay-intro" class="btn ghost small">説明をもう一度見る</button>
   </section>
 
   <!-- ===== マッチング ===== -->
@@ -63,7 +67,8 @@
 
   <!-- ===== 採掘 フェーズ1(判断) ===== -->
   <section id="screen-phase1" class="screen">
-    <h2 class="screen-title">採掘 — どこを掘る?</h2>
+    <h2 class="screen-title">採掘 ① どこを掘る?</h2>
+    <p class="screen-caption">相棒のヒントを信じるかは、あんた次第。</p>
     <div id="phase1-partner" class="partner-row"></div>
     <div id="dig-map" class="dig-map"></div>
     <button id="btn-dig" class="btn primary" disabled>ここを掘る</button>
@@ -71,7 +76,8 @@
 
   <!-- ===== 採掘 フェーズ2(呼吸合わせ) ===== -->
   <section id="screen-phase2" class="screen">
-    <h2 class="screen-title">呼吸を合わせろ</h2>
+    <h2 class="screen-title">採掘 ② 呼吸を合わせろ</h2>
+    <p class="screen-caption">ピッケルが光る帯に重なった瞬間にタップ ——全3回。</p>
     <div id="phase2-partner" class="partner-row small"></div>
     <div class="gauge-wrap">
       <div id="gauge">

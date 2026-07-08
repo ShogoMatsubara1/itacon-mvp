@@ -503,9 +503,10 @@ const Phase2Screen = {
 const ResultScreen = {
   enter() {
     const result = Game.settle();
+    // ウォレット・記録に積むのはプレイヤーの取り分のみ(相棒の分は渡した扱い)
     const isNewBest = Storage.recordSession(
       result.char.id,
-      result.gain,
+      result.playerShare,
       result.sync
     );
 
@@ -525,13 +526,31 @@ const ResultScreen = {
       result.sync >= 80 ? 'A' :
       result.sync >= 60 ? 'B' : 'C';
 
-    // 獲得量: カウントアップ
+    // 獲得量: 合計をカウントアップしたあと、山分けの内訳を左右に開く
     const gain = document.createElement('div');
     gain.className = 'result-gain';
     gain.innerHTML =
-      `採れた共鳴石 <strong><span class="gem big"></span><span id="gain-count">+0</span></strong>`;
+      '<span class="result-gain-label">掘り出した共鳴石(合計)</span>' +
+      `<strong><span class="gem big"></span><span id="gain-count">+0</span></strong>` +
+      '<div class="split-row">' +
+        '<div class="split-side">' +
+          '<span class="split-label">あなた</span>' +
+          `<span class="split-amount" id="split-you">+0</span>` +
+        '</div>' +
+        '<span class="split-divider">⇄</span>' +
+        '<div class="split-side">' +
+          `<span class="split-label">${result.char.name}</span>` +
+          `<span class="split-amount" id="split-partner">+0</span>` +
+        '</div>' +
+      '</div>';
     body.appendChild(gain);
     animateCount($('#gain-count'), result.gain, { prefix: '+' });
+    // 合計のカウントアップが落ち着いた頃合いで、山分けの内訳を見せる
+    setTimeout(() => {
+      gain.querySelector('.split-row').classList.add('show');
+      animateCount($('#split-you'), result.playerShare, { prefix: '+', duration: 450 });
+      animateCount($('#split-partner'), result.partnerShare, { prefix: '+', duration: 450 });
+    }, 650);
 
     // シンクロ率: アニメーションするバー+ランクスタンプ
     // (ランクは呼吸合わせの評価なのでこちらに載せる。地点のハズレとは独立)

@@ -69,6 +69,83 @@ const CHARACTERS = [
       miss: '…ごめん、外した。今日のあたしはハズレの日だわ',
     },
   },
+  {
+    id: 'jack',
+    name: 'ジャック',
+    species: 'シャーマン系',
+    color: '#e0703f',
+    img: 'assets/jack.png',
+    cardLine: '気軽にいこ〜。波長合えば、いい石採れるって',
+    acceptLine: 'おっけ、行こ行こ',
+    rejectLine: '今日はパスで。なんか波長合わない気がすんだよね〜',
+    rejectRepeatLine: 'いや今日はマジで…また今度な?',
+    // 信頼度: 関係で伸びる(セッションを重ねるほど波長が合ってくる)
+    getTrust: (sessions = 0) =>
+      Math.min(
+        CONFIG.JACK_TRUST_BASE + sessions * CONFIG.JACK_TRUST_PER_SESSION,
+        CONFIG.JACK_TRUST_MAX
+      ),
+    hintLine: (spot, trust) =>
+      trust >= CONFIG.JACK_CONFIDENT_THRESHOLD
+        ? `${spot}。うん、君とならわかる。行こ`
+        : `んー…${spot}かなあ。まだ君の感じ掴めてなくてさ`,
+    resultLines: {
+      high: 'な? 息合うと気持ちいいっしょ',
+      mid: 'まあまあ! こんな日もあるって',
+      low: 'あちゃ〜、ちょいズレたな',
+      miss: 'あー、ズレたか。ごめんごめん',
+    },
+  },
+  {
+    id: 'chester',
+    name: 'チェスター',
+    species: 'ゾンビ系',
+    color: '#8a5a3a',
+    img: 'assets/chester.png',
+    cardLine: 'お、俺? …や、やれるっすよ。たぶん。…いや、やる',
+    acceptLine: 'よ、よし。行くぞ、俺は準備できてる',
+    rejectLine: 'いや待て待て、今日は無理。手が震えてる',
+    rejectRepeatLine: 'しつこい! …いや、ごめん。でも無理なもんは無理で',
+    // 信頼度: 強気/弱気の二択(セッションごとにランダム)。
+    // 言い回しがそのまま信頼度のヒントになる仕掛け
+    getTrust: () =>
+      Math.random() < CONFIG.CHESTER_CONFIDENT_CHANCE
+        ? CONFIG.CHESTER_TRUST_CONFIDENT
+        : CONFIG.CHESTER_TRUST_UNSURE,
+    hintLine: (spot, trust) =>
+      trust >= CONFIG.CHESTER_MOOD_THRESHOLD
+        ? `${spot}だ。断言する。ここ以外ありえねぇ`
+        : `${spot}…かも…いや自信ねぇ、任せるわ…`,
+    resultLines: {
+      high: 'だろ!? 言った通りだろ!(半泣き)',
+      mid: 'ま、まあ悪くない…よな?',
+      low: 'ほら見ろ…って言うほどでもないか…',
+      miss: '…ほら見ろ、だから怖かったんだよ…',
+    },
+  },
+  {
+    id: 'janice',
+    name: 'ジャニス',
+    species: 'ロボット系',
+    color: '#c9a227',
+    img: 'assets/janice.png',
+    hintMode: 'eliminate', // ヒントは「正解」ではなく「避けるべき地点」を示す
+    cardLine: '実力があるなら組んであげる。時間の無駄は嫌いなの',
+    acceptLine: '合格。ついてきて、遅れないでね',
+    rejectLine: '今日はやめておくわ。あなた、まだ私に釣り合わない',
+    rejectRepeatLine: '……気が変わるとでも? 無駄よ',
+    // 信頼度: 消去法ヒントの的中率(「ここは無い」が本当に外れである確率)
+    getTrust: () => CONFIG.JANICE_TRUST,
+    // hintSpotは「避けるべき地点」。的中率通りに真のハズレを消すが、
+    // たまに(1-的中率)正解地点を誤って消してしまう
+    hintLine: (spot) => `${spot}は死んでるわ。そこは掘るだけ無駄。あとは自分で読みなさい`,
+    resultLines: {
+      high: 'ええ、この程度は当然。次も期待してる',
+      mid: '及第点、ってところね',
+      low: '……もう少し丁寧に読みなさい',
+      miss: '私は外れを教えた。選んだのはあなたよ',
+    },
+  },
 ];
 
 function getCharacter(id) {

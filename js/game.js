@@ -26,15 +26,23 @@ const Game = {
 
   // 承諾後、採掘セッションを開始(信頼度決定・正解地点・ヒント生成)
   startSession(char) {
-    const trust = char.getTrust();
+    const sessions = Storage.record(char.id).sessions;
+    const trust = char.getTrust(sessions);
     const correctSpot =
       SPOT_LABELS[Math.floor(Math.random() * SPOT_LABELS.length)];
 
+    // hintMode 'eliminate'(ジャニス型): hintSpotは「避けるべき地点」の意味になる。
+    // trustは「本当にハズレを教えてくれる確率」(逆に正解を消してしまうこともある)
+    const others = SPOT_LABELS.filter((s) => s !== correctSpot);
     let hintSpot;
-    if (Math.random() < trust) {
+    if (char.hintMode === 'eliminate') {
+      hintSpot =
+        Math.random() < trust
+          ? others[Math.floor(Math.random() * others.length)]
+          : correctSpot;
+    } else if (Math.random() < trust) {
       hintSpot = correctSpot;
     } else {
-      const others = SPOT_LABELS.filter((s) => s !== correctSpot);
       hintSpot = others[Math.floor(Math.random() * others.length)];
     }
 
@@ -57,7 +65,7 @@ const Game = {
     return Math.max(0, Math.min(1, acc));
   },
 
-  // 精算(指示書 §3-5)
+  // 精算(指示書 §3-5)。採れた共鳴石は相棒と山分けする
   settle() {
     const s = this.session;
     const avg = s.taps.reduce((a, b) => a + b, 0) / s.taps.length;
@@ -65,6 +73,10 @@ const Game = {
     const bonus = hit ? 1.0 : CONFIG.MISS_PENALTY;
     const gain = Math.round(avg * bonus * CONFIG.RESONANCE_COEF);
     const sync = Math.round(avg * 100);
+
+    // 端数はプレイヤー取り分に寄せ、二つの取り分の合計が必ずgainと一致するようにする
+    const playerShare = Math.round(gain * CONFIG.PLAYER_SHARE);
+    const partnerShare = gain - playerShare;
 
     let lineKey;
     if (!hit) lineKey = 'miss';
@@ -78,6 +90,8 @@ const Game = {
       correctSpot: s.correctSpot,
       chosenSpot: s.chosenSpot,
       gain,
+      playerShare,
+      partnerShare,
       sync,
       line: s.char.resultLines[lineKey],
     };

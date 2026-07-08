@@ -6,5 +6,8 @@
   pete.png    … ピート(ロボット系)
   julian.png  … ジュリアン(シャーマン系)
   patty.png   … パティ(ゾンビ系)
+  janice.png  … ジャニス(ロボット系)
+  jack.png    … ジャック(シャーマン系)
+  chester.png … チェスター(ゾンビ系)
 
 推奨: 縦長(例 480x640程度)。object-fit: cover で表示されます。

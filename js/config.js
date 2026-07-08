@@ -34,7 +34,27 @@ const CONFIG = {
   PATTY_TRUST_MAX: 0.90,
   PATTY_LOW_MOOD_THRESHOLD: 0.60,   // これ未満の日は「不調時」の言い回し
 
+  // ジャック: 関係で伸びる信頼度(セッションを重ねるほど波長が合ってくる)
+  JACK_TRUST_BASE: 0.60,
+  JACK_TRUST_PER_SESSION: 0.04,
+  JACK_TRUST_MAX: 0.90,
+  JACK_CONFIDENT_THRESHOLD: 0.75,   // これ以上で「確信した」言い回しに変わる
+
+  // チェスター: 強気/弱気の二択(セッションごとにランダム)。
+  // 言い回し(強気/弱気)がそのまま信頼度のヒントになる
+  CHESTER_TRUST_CONFIDENT: 0.85,
+  CHESTER_TRUST_UNSURE: 0.40,
+  CHESTER_CONFIDENT_CHANCE: 0.5,
+  CHESTER_MOOD_THRESHOLD: 0.6,
+
+  // ジャニス: 消去法ヒント。「ここは無い」と示した地点が本当にハズレである確率
+  // (外れた場合は逆に正解地点を消してしまう=たまに大きく外す)
+  JANICE_TRUST: 0.85,
+
   // 精算時の台詞分岐しきい値(シンクロ率%)
   SYNC_HIGH: 80,
   SYNC_MID: 50,
+
+  // 山分けの取り分(プレイヤー側の割合)
+  PLAYER_SHARE: 0.5,
 };

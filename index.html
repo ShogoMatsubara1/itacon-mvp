@@ -7,13 +7,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
 <div id="app">
 
   <!-- ===== オープニング(導入・初回のみ自動表示) ===== -->
   <section id="screen-opening" class="screen">
+    <div class="oldman-portrait">
+      <img src="assets/oldman.png" alt="手配所のオヤジ">
+    </div>
     <div id="prologue" class="prologue">
       <span class="prologue-speaker">手配所のオヤジ</span>
       <p id="prologue-text" class="prologue-text"></p>
@@ -71,6 +74,7 @@
     <p class="screen-caption">相棒のヒントを信じるかは、あんた次第。</p>
     <div id="phase1-partner" class="partner-row"></div>
     <div id="dig-map" class="dig-map"></div>
+    <div id="spot-reaction" class="spot-reaction hidden"></div>
     <button id="btn-dig" class="btn primary" disabled>ここを掘る</button>
   </section>
 
@@ -79,6 +83,10 @@
     <h2 class="screen-title">採掘 ② 呼吸を合わせろ</h2>
     <p class="screen-caption">ピッケルが光る帯に重なった瞬間にタップ ——全3回。</p>
     <div id="phase2-partner" class="partner-row small"></div>
+    <div class="breath-indicator">
+      <span id="breath-dot" class="breath-dot"></span>
+      <span class="breath-label">相棒の呼吸</span>
+    </div>
     <div class="gauge-wrap">
       <div id="gauge">
         <div id="zone"></div>
@@ -111,11 +119,11 @@
 
 </div>
 
-<script src="js/config.js"></script>
-<script src="js/characters.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/game.js"></script>
-<script src="js/screens.js"></script>
-<script src="js/main.js"></script>
+<script src="js/config.js?v=5"></script>
+<script src="js/characters.js?v=5"></script>
+<script src="js/storage.js?v=5"></script>
+<script src="js/game.js?v=5"></script>
+<script src="js/screens.js?v=5"></script>
+<script src="js/main.js?v=5"></script>
 </body>
 </html>

@@ -58,6 +58,18 @@ const Game = {
     return this.session;
   },
 
+  // 採掘フェーズ1: 地点選択直後の相棒リアクション文を選ぶ(正解地点はネタバレしない)。
+  // hintMode='eliminate'(ジャニス型)はhintSpotが「避けるべき地点」の意味になるため、
+  // 一致判定の意味が反転する(選んだ=忠告を無視した、になる)
+  spotReactionLine(char, chosenSpot, hintSpot) {
+    const followedHint =
+      char.hintMode === 'eliminate'
+        ? chosenSpot !== hintSpot
+        : chosenSpot === hintSpot;
+    const pool = followedHint ? char.spotReaction.agree : char.spotReaction.disagree;
+    return pool[Math.floor(Math.random() * pool.length)];
+  },
+
   // タップ精度 = 1 - (ゾーン中心からのズレ距離 / 最大距離)、0〜1にクランプ
   // pos: インジケーター位置 0〜1(ゾーン中心は0.5、最大距離は0.5)
   tapAccuracy(pos) {

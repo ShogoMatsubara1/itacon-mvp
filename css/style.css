@@ -71,6 +71,24 @@ body {
     url("../assets/cave.png");
 }
 
+/* オープニング(オヤジのセリフ中)専用の暗幕。#appの背景画像とスクリーン
+   内容の間に挟む(::beforeは実子要素より先に描画される=背面になる)。
+   セリフが終わるとintro-dimクラスが外れ、ここがふわっと明るくなってから
+   受付へ遷移する */
+#app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 3, 10, 0.72);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+  z-index: 0;
+}
+#app.intro-dim::before {
+  opacity: 1;
+}
+
 /* ---- 画面切り替え ----
    要素が上から順に時間差で立ち上がる。一斉にパッと出るより
    「場面が組み上がる」印象になり、安っぽさが消える */
@@ -78,6 +96,8 @@ body {
   display: none;
 }
 .screen.active {
+  position: relative; /* #app::beforeの暗幕より確実に手前に来るように */
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -303,6 +323,29 @@ body {
   justify-content: center;
   min-height: calc(100vh - 48px);
 }
+.oldman-portrait {
+  position: relative;
+  width: 264px;
+  height: 264px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.oldman-portrait::before {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 221, 130, 0.28), transparent 70%);
+}
+.oldman-portrait img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.5));
+}
 .prologue {
   background: var(--cream);
   border: 3px solid var(--navy-edge);
@@ -506,12 +549,16 @@ body {
   transform: translateX(130%) rotate(16deg) !important;
   opacity: 0;
 }
-.swipe-card.re-enter {
-  animation: reenter 0.3s ease;
+/* 断られた時: 依頼で右へ飛んで行ったカードが一瞬戻ってきて、
+   そのまま強制的に左へパスされる(このカードで粘らせない) */
+.swipe-card.reject-swipe {
+  animation: rejectSwipe 0.55s ease;
 }
-@keyframes reenter {
-  from { transform: translateX(45%) rotate(8deg); opacity: 0; }
-  to   { transform: none; opacity: 1; }
+@keyframes rejectSwipe {
+  0%   { transform: translateX(130%) rotate(16deg); opacity: 0; }
+  35%  { transform: translateX(130%) rotate(16deg); opacity: 0; }
+  60%  { transform: translateX(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateX(-130%) rotate(-16deg); opacity: 0; }
 }
 
 .swipe-portrait {
@@ -726,27 +773,46 @@ body {
   margin-bottom: 4px;
 }
 
-/* 採掘地点の地図: 洞窟の「開けた地面」だけを切り出して表示する
-   (結晶が生えている一角は地点ごとに見た目が変わってしまい、
-   §3-3の「候補地点はほぼ均質に見せる」に反するため避ける) */
+/* 地点選択直後・確定前に挟む相棒の一言(吹き出しより一回り軽い見た目) */
+.spot-reaction {
+  background: var(--cream);
+  border: 3px solid var(--navy-edge);
+  border-radius: 16px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--ink);
+  box-shadow: 0 4px 0 var(--navy-edge), var(--sticker-shadow);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.spot-reaction.show {
+  opacity: 1;
+  transform: none;
+}
+
+/* 採掘地点の地図。cave_map.png専用に描かれた4つの採掘坑をそのまま使う。
+   コンテナのaspect-ratioを画像の実寸に一致させ、background-sizeを
+   100% 100%にすることでクロップなしの1:1マッピングにし、
+   ピン座標(%指定)が常に同じ坑の位置に来るようにしている */
 .dig-map {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 1577 / 997;
   border-radius: 22px;
   border: 3px solid var(--navy-edge);
   overflow: hidden;
   box-shadow: 0 5px 0 var(--navy-edge), var(--sticker-shadow);
-  background-image: url("../assets/cave.png");
-  background-size: 240% auto;
-  background-position: 50% 84%;
+  background-image: url("../assets/cave_map.png");
+  background-size: 100% 100%;
   background-repeat: no-repeat;
 }
 .dig-map::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(10, 8, 20, 0.1), rgba(10, 8, 20, 0.32));
+  background: linear-gradient(to bottom, rgba(10, 8, 20, 0.05), rgba(10, 8, 20, 0.22));
   pointer-events: none;
 }
 
@@ -824,6 +890,81 @@ body {
 /* ============================================================
    採掘 フェーズ2(呼吸合わせ)
    ============================================================ */
+
+/* 「相棒の呼吸」表示。常時ゆっくり明滅させ、タップの結果で一瞬だけ
+   反応を変える(キャラごとの見た目はstyle-*で分岐)。CSSアニメーション
+   のみで組んでいるため負荷は軽い */
+.breath-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 4px;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+.breath-label {
+  background: var(--cream);
+  border: 2px solid var(--navy-edge);
+  border-radius: 999px;
+  padding: 2px 12px;
+  box-shadow: 0 2px 0 var(--navy-edge);
+}
+.breath-dot {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 6px rgba(89, 227, 200, 0.7);
+  animation: breathIdle 2.1s ease-in-out infinite;
+}
+@keyframes breathIdle {
+  0%, 100% { transform: scale(0.8); opacity: 0.6; }
+  50%      { transform: scale(1.15); opacity: 1; }
+}
+
+/* 成功パルス: スタイルごとに派手さ・質感を変える */
+.breath-dot.style-bright.pulse-success { animation: breathSuccessBright 0.42s ease; }
+@keyframes breathSuccessBright {
+  0%   { transform: scale(1); background: var(--teal); }
+  40%  { transform: scale(1.9); background: var(--sun); box-shadow: 0 0 18px 4px rgba(255, 211, 77, 0.9); }
+  100% { transform: scale(0.85); background: var(--teal); }
+}
+.breath-dot.style-calm.pulse-success { animation: breathSuccessCalm 0.5s ease; }
+@keyframes breathSuccessCalm {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.2); box-shadow: 0 0 10px rgba(89, 227, 200, 0.9); }
+  100% { transform: scale(0.85); }
+}
+.breath-dot.style-moody.pulse-success { animation: breathSuccessMoody 0.45s ease; }
+@keyframes breathSuccessMoody {
+  0%   { transform: scale(1) rotate(0deg); }
+  35%  { transform: scale(1.5) rotate(-10deg); }
+  65%  { transform: scale(1.1) rotate(8deg); }
+  100% { transform: scale(0.85) rotate(0deg); }
+}
+.breath-dot.style-sharp.pulse-success { animation: breathSuccessSharp 0.22s ease; }
+@keyframes breathSuccessSharp {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.3); box-shadow: 0 0 10px rgba(255, 255, 255, 0.95); }
+  100% { transform: scale(0.85); }
+}
+.breath-dot.style-chill.pulse-success { animation: breathSuccessChill 0.6s ease; }
+@keyframes breathSuccessChill {
+  0%   { transform: scale(1); }
+  60%  { transform: scale(1.35); box-shadow: 0 0 14px rgba(89, 227, 200, 0.85); }
+  100% { transform: scale(0.85); }
+}
+
+/* 失敗パルス: 軽く揺れて一瞬暗くなる(全スタイル共通・控えめ) */
+.breath-dot.pulse-miss { animation: breathMiss 0.4s ease; }
+@keyframes breathMiss {
+  0%   { transform: scale(1) translateX(0); filter: brightness(1); }
+  30%  { transform: scale(0.85) translateX(-3px); filter: brightness(0.55); }
+  60%  { transform: scale(0.85) translateX(3px); }
+  100% { transform: scale(0.85) translateX(0); filter: brightness(1); }
+}
+
 .gauge-wrap {
   padding: 12px 4px;
 }

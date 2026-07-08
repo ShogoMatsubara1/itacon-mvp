@@ -44,10 +44,10 @@ function makePortrait(char, extraClass) {
 // 初見プレイヤーに「自分は何者で、ここは何なのか」を渡す。企画書の
 // トーン(異世界バイト/裏稼業バディコメディ)に合わせた手配所のオヤジ語り。
 const PROLOGUE_BEATS = [
-  'いらっしゃい。あんた、稼ぎに来た人間だろ?\nこの世界の鉱石が、あんたらの世界で高く売れるって話はもう聞いてるね?',
-  'お目当ての石の名前は“共鳴石(きょうめいせき)”。\nふたりの息がぴったり合った瞬間にしか採れない、変わった鉱石だ。',
-  'そこで、ここにいるワケあり連中 —— ITACON(イタコン)の出番さ。\n気に入ったやつの身体を借りて、ふたりで掘るんだ。',
-  'どこを掘るかは、あんたの勘で決めな。あとは相棒と呼吸を合わせるだけ。\n採れた石は山分け。……さあ、相棒を選んでいきな。',
+  'いらっしゃい。あんた、遠いとこからはるばる出稼ぎに来た人間だろ?\n目当てはわかってる。この世界でしか採れない“共鳴石(きょうめいせき)”——あんたらの世界じゃ、バカ高く売れるらしいな。',
+  'だが、よそ者が一人で坑道に入っても、石ころ一つ掘れやしない。あの石を掘るにゃ、この土地の“身体”がいるのさ。\nそこで、ここにいる連中 —— ITACON(イタコン)の出番だ。訳あって身体を貸して食ってる、この世界の住人さ。',
+  'あんたは気に入った奴に“憑依”して、二人で一つになって働く。頭を使うのがあんた、身体を出すのが相棒だ。\nどこを掘るかは、あんたの勘で決めな。相棒がヒントはくれるが……信じるかは、あんた次第だ。',
+  'あとは相棒と息を合わせて掘るだけ。二人のタイミングが噛み合うほど、石はごっそり採れる。\n採れた石は山分け。文句はナシだ。……さあ、相棒を選びに行きな。',
 ];
 
 const OpeningScreen = {
@@ -55,6 +55,8 @@ const OpeningScreen = {
 
   enter() {
     this.beat = 0;
+    this.finishing = false;
+    $('#app').classList.add('intro-dim');
     this.render();
   },
 
@@ -91,10 +93,14 @@ const OpeningScreen = {
     }
   },
 
-  // スキップ/読了。次回以降は受付から始まるよう既読フラグを保存
+  // スキップ/読了。暗幕をふわっと明るく戻してから受付へ抜ける。
+  // 次回以降は受付から始まるよう既読フラグを保存
   finish() {
+    if (this.finishing) return;
+    this.finishing = true;
     Storage.markIntroSeen();
-    showScreen('reception');
+    $('#app').classList.remove('intro-dim');
+    setTimeout(() => showScreen('reception'), 600);
   },
 };
 
@@ -286,13 +292,26 @@ const MatchingScreen = {
           label: 'そっか……',
           onClick: () => {
             this.hideOverlay();
-            this.busy = false;
-            // 同じ相手のカードが戻ってくる(再挑戦もパスもできる)
-            this.renderStack('re-enter');
+            this.forceLeftSwipe();
           },
         });
       }
     }, 900);
+  },
+
+  // 断られたら、そのカードを強制的に左へスワイプして次の相手へ進める
+  // (依頼で右へ飛んで行ったカードが、断られた末に戻ってきてそのまま
+  // パスされる、という一続きの動き)
+  forceLeftSwipe() {
+    const card = this.topCard;
+    card.classList.remove('fly-right', 'settle');
+    void card.offsetWidth; // アニメーションを頭から再生
+    card.classList.add('reject-swipe');
+    setTimeout(() => {
+      this.idx = (this.idx + 1) % CHARACTERS.length;
+      this.busy = false;
+      this.renderStack();
+    }, 550);
   },
 
   showOverlay(char, text, action, title) {
@@ -366,11 +385,23 @@ const Phase1Screen = {
         box.querySelectorAll('.pin-anchor').forEach((b) => b.classList.remove('selected'));
         pin.classList.add('selected');
         $('#btn-dig').disabled = false;
+        this.showReaction(s);
       });
       box.appendChild(pin);
     });
 
+    $('#spot-reaction').classList.add('hidden');
     $('#btn-dig').disabled = true;
+  },
+
+  // 地点選択直後・確定前に相棒が一言だけ挟む(正解地点はここでは一切参照しない)
+  showReaction(s) {
+    const line = Game.spotReactionLine(s.char, s.chosenSpot, s.hintSpot);
+    const el = $('#spot-reaction');
+    el.innerHTML = `<span class="bubble-name">${s.char.name}</span>「${line}」`;
+    el.classList.remove('hidden', 'show');
+    void el.offsetWidth; // 選び直すたびにアニメーションを再生し直す
+    el.classList.add('show');
   },
 };
 
@@ -399,6 +430,19 @@ const Phase2Screen = {
     $('#tap-feedback').innerHTML = '&nbsp;';
     $('#btn-tap').disabled = false;
 
+    // キャラ別の呼吸(指示書追加分): 速度倍率+ゆらぎ。ゆらぎは滑らかな
+    // sin波で表現し(毎フレームの乱数は使わない)、軽量かつ「揺れて見える」
+    const breath = s.char.breath || { speedMul: 1, wobble: () => 0, style: 'default' };
+    this.speedMul = breath.speedMul;
+    this.wobbleAmt = breath.wobble(s.trust) || 0;
+    this.wobbleFreq = 1.3 + Math.random() * 0.9;
+    this.wobblePhase = Math.random() * Math.PI * 2;
+    this.elapsed = 0;
+
+    const dot = $('#breath-dot');
+    dot.className = 'breath-dot style-' + (breath.style || 'default');
+    dot.style.animationDuration = (2.1 / this.speedMul).toFixed(2) + 's';
+
     this.pos = 0;
     this.dir = 1;
     this.lastTime = null;
@@ -417,8 +461,14 @@ const Phase2Screen = {
     if (!this.running) return;
     if (this.lastTime !== null) {
       const dt = (time - this.lastTime) / 1000;
-      // 2.2%/frame(60fps基準)を時間ベースに換算 → リフレッシュレート非依存
-      const speed = CONFIG.INDICATOR_SPEED_PER_FRAME * CONFIG.FPS_BASE;
+      this.elapsed += dt;
+      // 2.2%/frame(60fps基準)を時間ベースに換算 → リフレッシュレート非依存。
+      // キャラ別の速度倍率+緩やかなsin波のゆらぎを掛け合わせる
+      const baseSpeed = CONFIG.INDICATOR_SPEED_PER_FRAME * CONFIG.FPS_BASE * this.speedMul;
+      const wobbleFactor = this.wobbleAmt
+        ? 1 + Math.sin(this.elapsed * this.wobbleFreq + this.wobblePhase) * this.wobbleAmt
+        : 1;
+      const speed = baseSpeed * wobbleFactor;
       this.pos += this.dir * speed * dt;
       if (this.pos > 1) {
         this.pos = 2 - this.pos;
@@ -450,6 +500,7 @@ const Phase2Screen = {
     this.renderDots();
     this.showFeedback(acc);
     this.swingMarker();
+    this.reactBreath(acc);
 
     if (s.taps.length >= CONFIG.TAP_COUNT) {
       $('#btn-tap').disabled = true;
@@ -457,6 +508,14 @@ const Phase2Screen = {
       cancelAnimationFrame(this.rafId);
       setTimeout(() => showScreen('result'), 900);
     }
+  },
+
+  // 相棒の呼吸ドット: タップ精度に応じてキャラ別の光り方/揺れ方をする
+  reactBreath(acc) {
+    const dot = $('#breath-dot');
+    dot.classList.remove('pulse-success', 'pulse-miss');
+    void dot.offsetWidth;
+    dot.classList.add(acc >= 0.6 ? 'pulse-success' : 'pulse-miss');
   },
 
   // タップの瞬間、つるはしを傾けて発光させる(再タップ時も毎回頭から再生)

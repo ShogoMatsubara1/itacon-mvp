@@ -16,6 +16,19 @@ const CHARACTERS = [
     // 信頼度: 65%(固定)
     getTrust: () => 0.65,
     hintLine: (spot, trust) => `${spot}です! 僕のセンサーが反応してます!`,
+    // 呼吸合わせ(フェーズ2): 素直だがやや前のめり。速度は少し速め、揺らぎなし
+    breath: { speedMul: 1.16, wobble: () => 0, style: 'bright' },
+    // 採掘フェーズ1: 地点選択直後のリアクション(agree=ヒントと同じ地点を選んだ)
+    spotReaction: {
+      agree: [
+        'そこです! 僕のセンサーもそう言ってます!',
+        'おお、いいですね! 僕もそこ、反応強めに感じてました!',
+      ],
+      disagree: [
+        'え、そっちですか!? …でも全然アリだと思います!',
+        '僕のセンサーとは違いますけど……その勘、嫌いじゃないです!',
+      ],
+    },
     resultLines: {
       high: 'ほら、やっぱり僕の勘、完璧じゃないですか!?',
       mid: 'まあまあ、って感じですかね! 次はもっといけます!',
@@ -36,6 +49,18 @@ const CHARACTERS = [
     // 信頼度: 90%(固定)
     getTrust: () => 0.90,
     hintLine: (spot, trust) => `${spot}。……それだけです`,
+    // 呼吸合わせ(フェーズ2): 標準よりやや遅く、安定していてブレがない
+    breath: { speedMul: 0.88, wobble: () => 0, style: 'calm' },
+    spotReaction: {
+      agree: [
+        '……悪くない判断です',
+        'そこなら、試す価値はあります',
+      ],
+      disagree: [
+        '……そちらですか。止めはしません',
+        '私の感覚とは違いますが……判断はあなたに任せます',
+      ],
+    },
     resultLines: {
       high: '……悪くなかったですね',
       mid: '可もなく不可もなく、です',
@@ -62,6 +87,25 @@ const CHARACTERS = [
       trust < CONFIG.PATTY_LOW_MOOD_THRESHOLD
         ? `んー…${spot}? かなあ…ちょっと自信ない`
         : `${spot}だね。あたしの勘、今日冴えてるよ`,
+    // 呼吸合わせ(フェーズ2): 気分屋。今日の調子(trust)が悪いほど揺らぎが大きい
+    breath: {
+      speedMul: 1.0,
+      wobble: (trust) => {
+        const t = (trust - CONFIG.PATTY_TRUST_MIN) / (CONFIG.PATTY_TRUST_MAX - CONFIG.PATTY_TRUST_MIN);
+        return 0.55 - 0.4 * Math.max(0, Math.min(1, t));
+      },
+      style: 'moody',
+    },
+    spotReaction: {
+      agree: [
+        'そこね。いいじゃん、早くやろ',
+        'あたしもそこだと思ってた。……たぶんね',
+      ],
+      disagree: [
+        'そっち? まあ、アンタが言うならやるけど',
+        'へえ、逆張りするじゃん。嫌いじゃないよ',
+      ],
+    },
     resultLines: {
       high: 'へえ、やるじゃん。今夜あたしが奢ってやるよ',
       mid: 'ま、こんなもんでしょ',
@@ -89,6 +133,18 @@ const CHARACTERS = [
       trust >= CONFIG.JACK_CONFIDENT_THRESHOLD
         ? `${spot}。うん、君とならわかる。行こ`
         : `んー…${spot}かなあ。まだ君の感じ掴めてなくてさ`,
+    // 呼吸合わせ(フェーズ2): 脱力系。標準よりゆったりめ、揺らぎなし
+    breath: { speedMul: 0.94, wobble: () => 0, style: 'chill' },
+    spotReaction: {
+      agree: [
+        'そこそこ、俺もそんな気してた',
+        'おっ、波長合ってきたじゃん。そこ行こ',
+      ],
+      disagree: [
+        'え、そっち? …ま、たまにはそれもアリっしょ',
+        '俺の勘とはズレてるけど、任せるわ。それもいいっしょ',
+      ],
+    },
     resultLines: {
       high: 'な? 息合うと気持ちいいっしょ',
       mid: 'まあまあ! こんな日もあるって',
@@ -116,6 +172,22 @@ const CHARACTERS = [
       trust >= CONFIG.CHESTER_MOOD_THRESHOLD
         ? `${spot}だ。断言する。ここ以外ありえねぇ`
         : `${spot}…かも…いや自信ねぇ、任せるわ…`,
+    // 呼吸合わせ(フェーズ2): ビビり。強気の日は落ち着き、弱気の日は手元が震える
+    breath: {
+      speedMul: 1.0,
+      wobble: (trust) => (trust >= CONFIG.CHESTER_MOOD_THRESHOLD ? 0.12 : 0.42),
+      style: 'moody',
+    },
+    spotReaction: {
+      agree: [
+        'そ、そこだよな!? 俺もそう思ってた、マジで',
+        'よし……そこで合ってる、はず。たぶん',
+      ],
+      disagree: [
+        'え、そっち行くの!? …ま、まあ度胸あるじゃん',
+        '俺の勘とは違うけど……お、俺は止めないからな!',
+      ],
+    },
     resultLines: {
       high: 'だろ!? 言った通りだろ!(半泣き)',
       mid: 'ま、まあ悪くない…よな?',
@@ -139,6 +211,20 @@ const CHARACTERS = [
     // hintSpotは「避けるべき地点」。的中率通りに真のハズレを消すが、
     // たまに(1-的中率)正解地点を誤って消してしまう
     hintLine: (spot) => `${spot}は死んでるわ。そこは掘るだけ無駄。あとは自分で読みなさい`,
+    // 呼吸合わせ(フェーズ2): 精密で無駄がない。揺らぎなし、やや速め
+    breath: { speedMul: 1.05, wobble: () => 0, style: 'sharp' },
+    // hintMode='eliminate'のため、agree/disagreeの意味が他キャラと逆になる点に注意
+    // (agree = 消去法の忠告どおり「そこは避けた」= 忠告に従った)
+    spotReaction: {
+      agree: [
+        '妥当な判断ね。悪くないわ',
+        'ええ、そこで構わない。話が早くて助かる',
+      ],
+      disagree: [
+        '……そこ、死んでるって言ったでしょう。まあ、好きにすれば',
+        '忠告は無視するのね。……後悔しないことよ',
+      ],
+    },
     resultLines: {
       high: 'ええ、この程度は当然。次も期待してる',
       mid: '及第点、ってところね',
